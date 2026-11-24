@@ -1,0 +1,28 @@
+# VIST-NRF experiment config — E1: A to A (within-environment), logistic regression
+run_id: e1_lr_a_to_a
+dataset:
+  raw_root: null  # set to downloaded physionet2019 training/ path when available
+train_env: A
+test_envs: [A]
+horizon_hours: 12
+min_history_hours: 6
+target_definition: reconstructed_operational_onset
+censoring_rule: complete_horizon_only
+features:
+  values: true
+  timing: true
+  hospital_proxies: false
+model:
+  name: logistic_regression
+  params:
+    C: 1.0
+    max_iter: 1000
+seed: 0
+split_seed: 0
+tuning:
+  trials: 20
+  select_on: source_validation
+max_minutes: 30
+resume: true
+results_dir: results
+exploratory: true
