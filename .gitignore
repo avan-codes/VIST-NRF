@@ -1,0 +1,60 @@
+# Data & large artifacts (never commit patient data / checkpoints / credentials)
+data/
+*.psv
+*.db
+*.sqlite
+*.sqlite3
+*.parquet
+*.pkl
+*.pickle
+*.pt
+*.pth
+*.ckpt
+*.h5
+*.npz
+
+# Large result artifacts (commit small text summaries only)
+results/*.png
+results/*.pdf
+results/*.pt
+results/*.pth
+results/*.pkl
+results/*.npz
+
+# Credentials & env
+.env
+.env.*
+*.key
+*.pem
+secrets/
+.venv/
+venv/
+.envrc
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.so
+.build/
+.eggs/
+*.egg-info/
+dist/
+build/
+
+# IDE / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Jupyter / Colab
+.ipynb_checkpoints/
+
+# Logs (keep small PROGRESS.md; ignore large run logs)
+logs/*.log
+
+# git credential helpers that may embed tokens
+.git/config.worktree
