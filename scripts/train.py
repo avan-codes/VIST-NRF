@@ -34,6 +34,7 @@ from vist_nrf.utils.io import (
 )
 from vist_nrf.utils.prereg import PreregistrationError, enforce_prereg, prereg_hash
 from vist_nrf.utils.seed import set_seed
+from vist_nrf.data.physionet2019 import load_environment
 from vist_nrf.data.splits import split_by_environment, assert_splits_valid
 from vist_nrf.data.targets import build_targets
 from vist_nrf.features.history import FeatureConfig, build_feature_matrix, assert_causal
@@ -111,10 +112,12 @@ def run(cfg_path: str | Path, exploratory: bool = False) -> dict:
                 }
             )
     else:
-        raise NotImplementedError(
-            "Real PhysioNet parsing path: wire vist_nrf.data.physionet2019.load_environment "
-            "after you download the data (spec §4). Not automated here."
-        )
+        print(f"Loading real PhysioNet data from {raw_root}")
+        patient_frames = {}
+        for env in [train_env] + test_envs:
+            env_frames = load_environment(raw_root, env)
+            patient_frames.update(env_frames)
+            print(f"  env {env}: {len(env_frames)} patients")
 
     # --- targets ---
     targets_long, patient_summary = build_targets(
@@ -134,7 +137,7 @@ def run(cfg_path: str | Path, exploratory: bool = False) -> dict:
     # --- features ---
     clinical_cols = [c for c in patient_frames[next(iter(patient_frames))].columns
                      if c not in ("SepsisLabel", "hour", "patient_id", "Age", "Gender",
-                                  "HospAdmTime", "ICULOS", "ICU_unit")]
+                                  "HospAdmTime", "ICULOS", "ICU_unit", "_source_file")]
     static_cols = [c for c in ("Age", "Gender", "HospAdmTime", "ICULOS", "ICU_unit")
                    if c in patient_frames[next(iter(patient_frames))].columns]
     cfg_feat = FeatureConfig(

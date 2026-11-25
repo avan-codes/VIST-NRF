@@ -27,10 +27,11 @@ Format per entry: Task ID | change | commit | tests | issues | next step.
 - Smoke test: scripts/train.py runs end-to-end on synthetic fixture; results saved to results/runs/<run_id>.jsonl and results/summary.jsonl; table + figures regenerated (results/table_comparison.md, results/fig_auroc_by_env.png).
 
 ## Issues
-- Real PhysioNet data NOT downloaded (requires PhysioNet credentials); smoke test uses synthetic fixture. Real path in train.py/evaluate.py raises NotImplementedError until data present (spec §4).
+- Real PhysioNet data DOWNLOADED via kagglehub to /home/pranjal/.cache/kagglehub/datasets/farjanayesmin/the-physionet-challenge-2019-dataset/versions/1 (20,336 A + 20,000 B patients, matches spec counts). raw_root set in configs/baselines/e1_a_to_a.yaml. Real-data path wired in train.py via load_environment; causality test + training running on real data (background).
 - xgboost not installed locally (optional dep); XGBoostBaseline raises clear ImportError if missing.
 - Colab bootstrap (00_bootstrap.ipynb) documented but not executed (needs GITHUB_TOKEN in Colab Secrets + OWNER set).
 
 ## Next step
-- Researcher: download PhysioNet per docs/DATA_NOTES.md (aws s3 sync), set raw_root in config, run train.py for E1–E2 baselines (5 seeds), then Gate 1 decision on H1/H2.
+- Real-data E1 training run in progress (background, notify_on_complete). Review results in results/runs/ and results/summary.jsonl when it finishes.
+- Run E2 cross-site (A→B, B→A) with 5 seeds, then Gate 1 decision on H1/H2.
 - If supported, build semi-synthetic held-out-policy evidence (E4) and VIST-NRF Stage C method; else pivot/report negative result per §16.

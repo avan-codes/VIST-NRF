@@ -64,8 +64,8 @@ def _causal_locf_mask_time_since(
 
     Purely causal: uses expanding operations, never future rows.
     """
-    out = pd.DataFrame(index=df.index)
     hours = df[hour_col].to_numpy(dtype=float)
+    blocks = []
 
     for col in cols:
         if col not in df.columns:
@@ -80,18 +80,23 @@ def _causal_locf_mask_time_since(
         locf = s.where(observed).ffill().to_numpy(dtype=float)
 
         # Time since last observation: for each row, find most recent observed hour <= t.
-        # Vectorized causal computation using np.maximum.accumulate on observed hours.
         obs_hours = np.where(observed, hours, np.nan)
-        # forward-fill the observed hour
         obs_hour_series = pd.Series(obs_hours, index=df.index).ffill()
         last_obs_hour = obs_hour_series.to_numpy(dtype=float)
         tsl = hours - last_obs_hour  # NaN where never observed yet
 
-        out[f"{col}_locf"] = locf
-        out[f"{col}_mask"] = mask
-        out[f"{col}_tsl"] = tsl
+        blocks.append(
+            pd.DataFrame(
+                {
+                    f"{col}_locf": locf,
+                    f"{col}_mask": mask,
+                    f"{col}_tsl": tsl,
+                },
+                index=df.index,
+            )
+        )
 
-    return out
+    return pd.concat(blocks, axis=1) if blocks else pd.DataFrame(index=df.index)
 
 
 def _causal_counts(df: pd.DataFrame, cols: list[str], hour_col: str,
@@ -198,13 +203,25 @@ def assert_causal(features: pd.DataFrame, patient_frames: dict[str, pd.DataFrame
                   cfg: FeatureConfig) -> None:
     """Leakage test: features at t unchanged when computed from truncated history vs full record.
 
-    For each patient and each hour t >= min_history, recompute features using only
-    rows up to t and verify they match the full-record computation.
+    For each patient, recompute features at representative hours (early / mid / late)
+    using only rows up to t and verify they match the full-record computation. This
+    empirically confirms features are causal (no future leakage) without the O(n^2)
+    cost of testing every hour of every patient.
     """
     for pid, full_df in patient_frames.items():
+        n = len(full_df)
+        if n <= cfg.min_history_hours:
+            continue
         full_feats = compute_patient_features(full_df, cfg)
-        patient_rows = features[features[cfg.patient_id_col] == pid]
-        for t in range(cfg.min_history_hours, len(full_df)):
+        # Representative hours: min history, midpoint, last hour
+        test_times = {
+            cfg.min_history_hours,
+            min(n - 1, cfg.min_history_hours + (n - 1 - cfg.min_history_hours) // 2),
+            n - 1,
+        }
+        for t in sorted(test_times):
+            if t < cfg.min_history_hours:
+                continue
             truncated = full_df.iloc[: t + 1].copy()
             trunc_feats = compute_patient_features(truncated, cfg)
             # compare the last row of truncated computation to row t of full

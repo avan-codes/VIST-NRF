@@ -1,7 +1,7 @@
 # VIST-NRF experiment config — E1: A to A (within-environment), logistic regression
 run_id: e1_lr_a_to_a
 dataset:
-  raw_root: null  # set to downloaded physionet2019 training/ path when available
+  raw_root: /home/pranjal/.cache/kagglehub/datasets/farjanayesmin/the-physionet-challenge-2019-dataset/versions/1
 train_env: A
 test_envs: [A]
 horizon_hours: 12
