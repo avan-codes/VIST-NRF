@@ -20,6 +20,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional
 
+import kagglehub
+
 from vist_nrf.data.physionet2019 import audit_psv, list_psv_files, infer_hospital_system
 
 
@@ -44,6 +46,31 @@ class DownloadManifest:
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).isoformat()
+
+
+def download_physionet2019(
+    dataset_slug: str = "farjanayesmin/the-physionet-challenge-2019-dataset",
+    dest_root: str | Path | None = None,
+) -> str:
+    """Download the PhysioNet/CinC Challenge 2019 dataset via KaggleHub.
+
+    Returns the local directory path KaggleHub downloaded the dataset to.
+    KaggleHub caches the download, so repeated calls are fast once cached.
+
+    Requires: pip install kagglehub  and a Kaggle account with the dataset
+    accepted (kagglehub handles auth via ~/.kaggle/kaggle.json or the
+    KAGGLE_USERNAME/KAGGLE_KEY env vars).
+    """
+    path = kagglehub.dataset_download(dataset_slug)
+    root = Path(path)
+    if not root.exists():
+        raise RuntimeError(f"KaggleHub download did not produce a path: {root}")
+    dest = Path(dest_root) if dest_root else root
+    if dest != root and dest.exists():
+        raise FileExistsError(f"dest_root already exists: {dest}")
+    # KaggleHub already placed files at `path`; just return it (caller may
+    # symlink/copy into dest_root if they want a canonical location).
+    return str(root)
 
 
 def audit_tree(root: str | Path, source_url: str = "UNVERIFIED") -> DownloadManifest:
